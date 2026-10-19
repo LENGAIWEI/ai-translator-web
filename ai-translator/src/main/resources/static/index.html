@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 智能翻译官</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 30px 20px;
+            color: #333;
+        }
+
+        .container {
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 32px;
+            max-width: 780px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 26px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            border: 1px solid #e0e0e0;
+            background: #fff;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon-btn:hover {
+            background: #f0f2ff;
+            border-color: #667eea;
+        }
+
+        .subtitle {
+            color: #999;
+            margin-bottom: 24px;
+            font-size: 14px;
+        }
+
+        .mode-tabs {
+            display: flex;
+            background: #f0f2f7;
+            border-radius: 10px;
+            padding: 4px;
+            margin-bottom: 16px;
+        }
+
+        .mode-tab {
+            flex: 1;
+            padding: 9px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px;
+            color: #666;
+            transition: all 0.2s;
+        }
+
+        .mode-tab.active {
+            background: #fff;
+            color: #667eea;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            font-weight: 600;
+        }
+
+        .lang-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .lang-box {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .lang-box label {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .lang-box select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            background: #fff;
+            border-radius: 10px;
+            font-size: 15px;
+            cursor: pointer;
+            outline: none;
+            transition: border-color 0.3s;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+        }
+
+        .lang-box select:focus {
+            border-color: #667eea;
+        }
+
+        .swap-btn {
+            width: 44px;
+            height: 44px;
+            border: none;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            margin-top: 18px;
+            flex-shrink: 0;
+            transition: transform 0.3s;
+        }
+
+        .swap-btn:hover {
+            transform: rotate(180deg);
+        }
+
+        .input-wrap {
+            position: relative;
+        }
+
+        textarea {
+            width: 100%;
+            height: 140px;
+            padding: 15px;
+            padding-bottom: 30px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 16px;
+            resize: vertical;
+            outline: none;
+            transition: border-color 0.3s;
+            font-family: inherit;
+            line-height: 1.6;
+        }
+
+        textarea:focus {
+            border-color: #667eea;
+        }
+
+        .char-count {
+            position: absolute;
+            right: 12px;
+            bottom: 8px;
+            font-size: 12px;
+            color: #bbb;
+            pointer-events: none;
+        }
+
+        .translate-btn {
+            width: 100%;
+            padding: 15px;
+            margin-top: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+
+        .translate-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .translate-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            text-align: center;
+            color: #667eea;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .loading .spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 3px solid #d7dbf8;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            vertical-align: -4px;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .result {
+            margin-top: 20px;
+            display: none;
+        }
+
+        .result-card {
+            background: #f8f9fb;
+            border-radius: 12px;
+            padding: 18px;
+        }
+
+        .result-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .result-head .label {
+            font-size: 13px;
+            color: #999;
+        }
+
+        .detected-tag {
+            display: none;
+            font-size: 12px;
+            color: #667eea;
+            background: #eef0ff;
+            padding: 3px 10px;
+            border-radius: 20px;
+        }
+
+        .copy-btn {
+            border: 1px solid #e0e0e0;
+            background: #fff;
+            border-radius: 8px;
+            padding: 5px 12px;
+            cursor: pointer;
+            font-size: 13px;
+            color: #555;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .result .content {
+            font-size: 17px;
+            color: #333;
+            line-height: 1.7;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .result-time {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #bbb;
+            text-align: right;
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 28px 0 12px;
+        }
+
+        .section-title h2 {
+            font-size: 16px;
+            color: #555;
+        }
+
+        .clear-btn {
+            border: none;
+            background: none;
+            color: #999;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .clear-btn:hover {
+            color: #e74c3c;
+        }
+
+        .history-list {
+            list-style: none;
+        }
+
+        .history-item {
+            border: 1px solid #eee;
+            border-radius: 10px;
+            padding: 12px 14px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .history-item:hover {
+            border-color: #c9cdf5;
+            background: #fafbff;
+        }
+
+        .history-item .hi-head {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 6px;
+        }
+
+        .history-item .hi-original {
+            font-size: 13px;
+            color: #666;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 1;
+            -webkit-box-orient: vertical;
+        }
+
+        .history-item .hi-translated {
+            font-size: 14px;
+            color: #333;
+            margin-top: 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+        .history-item .hi-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 6px;
+        }
+
+        .hi-actions button {
+            border: none;
+            background: none;
+            color: #888;
+            cursor: pointer;
+            font-size: 12px;
+            padding: 2px 4px;
+        }
+
+        .hi-actions button:hover {
+            color: #667eea;
+        }
+
+        .hi-actions button.del:hover {
+            color: #e74c3c;
+        }
+
+        .empty-history {
+            text-align: center;
+            color: #ccc;
+            font-size: 13px;
+            padding: 20px 0;
+        }
+
+        /* 设置弹窗 */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            padding: 20px;
+        }
+
+        .modal-overlay.open {
+            display: flex;
+        }
+
+        .modal {
+            background: #fff;
+            border-radius: 16px;
+            padding: 28px;
+            width: 100%;
+            max-width: 460px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+        }
+
+        .modal h2 {
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+
+        .modal .field {
+            margin-bottom: 16px;
+        }
+
+        .modal .field label {
+            display: block;
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 6px;
+        }
+
+        .modal .field input {
+            width: 100%;
+            padding: 11px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 9px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .modal .field input:focus {
+            border-color: #667eea;
+        }
+
+        .modal .hint {
+            font-size: 12px;
+            color: #aaa;
+            margin-top: 4px;
+        }
+
+        .modal .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 24px;
+        }
+
+        .modal .modal-actions button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 9px;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        .modal .btn-cancel {
+            background: #f0f0f0;
+            color: #555;
+        }
+
+        .modal .btn-save {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 200;
+            display: none;
+            max-width: 80%;
+        }
+
+        @media (max-width: 560px) {
+            .container {
+                padding: 20px;
+            }
+            .lang-row {
+                flex-wrap: wrap;
+            }
+            .swap-btn {
+                margin-top: 0;
+                align-self: center;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🌐 AI 智能翻译官</h1>
+        <div class="header-actions">
+            <button class="icon-btn" title="翻译历史" onclick="toggleHistory()">🕘</button>
+            <button class="icon-btn" title="设置" onclick="openSettings()">⚙️</button>
+        </div>
+    </div>
+    <p class="subtitle">基于大语言模型的智能翻译，支持多语种互译与自动检测</p>
+
+    <div class="mode-tabs">
+        <button id="tabTranslate" class="mode-tab active" onclick="setMode('translate')">翻译</button>
+        <button id="tabDict" class="mode-tab" onclick="setMode('dictionary')">查词</button>
+    </div>
+
+    <div class="lang-row">
+        <div class="lang-box">
+            <label>源语言</label>
+            <select id="sourceLang" onchange="onSourceChange()"></select>
+        </div>
+        <button class="swap-btn" title="互换语言" onclick="swapLangs()">⇄</button>
+        <div class="lang-box">
+            <label>目标语言</label>
+            <select id="targetLang" onchange="onTargetChange()"></select>
+        </div>
+    </div>
+
+    <div class="input-wrap">
+        <textarea id="inputText" placeholder="请输入要翻译的内容…（Ctrl + Enter 快速翻译）"></textarea>
+        <span class="char-count" id="charCount">0 字</span>
+    </div>
+
+    <button class="translate-btn" onclick="doTranslate()" id="translateBtn">立即翻译</button>
+
+    <div class="loading" id="loading"><span class="spinner"></span>翻译中，请稍候…</div>
+
+    <div class="result" id="result">
+        <div class="result-card">
+            <div class="result-head">
+                <span class="label" id="resultLabel">翻译结果</span>
+                <span class="detected-tag" id="detectedTag">自动检测</span>
+                <button class="copy-btn" id="copyResultBtn" onclick="copyText(currentResultText)">📋 复制</button>
+            </div>
+            <div class="content" id="resultContent"></div>
+            <div class="result-time" id="resultTime"></div>
+        </div>
+    </div>
+
+    <div class="section-title">
+        <h2>翻译历史</h2>
+        <button class="clear-btn" onclick="clearHistory()">清空历史</button>
+    </div>
+    <ul class="history-list" id="historyList"></ul>
+    <div class="empty-history" id="emptyHistory">暂无翻译记录</div>
+</div>
+
+<!-- 设置弹窗 -->
+<div class="modal-overlay" id="settingsModal">
+    <div class="modal">
+        <h2>⚙️ 接口设置</h2>
+        <div class="field">
+            <label>API Key</label>
+            <input type="password" id="cfgApiKey" placeholder="留空则不修改当前 Key">
+            <div class="hint" id="keyHint"></div>
+        </div>
+        <div class="field">
+            <label>模型名称</label>
+            <input type="text" id="cfgModel" placeholder="deepseek-chat">
+        </div>
+        <div class="field">
+            <label>接口地址</label>
+            <input type="text" id="cfgApiUrl" placeholder="https://api.deepseek.com/v1/chat/completions">
+        </div>
+        <div class="hint">保存后立即生效；重启服务后恢复为 application.properties 中的默认值。</div>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeSettings()">取消</button>
+            <button class="btn-save" onclick="saveSettings()">保存</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    const LANG_DEFAULT = {
+        auto: '自动检测', zh: '中文', en: '英语', ja: '日语', ko: '韩语',
+        fr: '法语', de: '德语', es: '西班牙语', ru: '俄语'
+    };
+
+    let LANG = LANG_DEFAULT;
+    let sourceLang = 'zh';
+    let targetLang = 'en';
+    let history = [];
+    let currentResultText = '';
+    let mode = 'translate';
+
+    const HISTORY_KEY = 'ai_translator_history';
+
+    // ---------- 初始化 ----------
+    function init() {
+        loadHistory();
+        loadLanguages();
+        bindInput();
+        setMode('translate');
+        renderHistory();
+    }
+
+    function bindInput() {
+        const ta = document.getElementById('inputText');
+        ta.addEventListener('input', () => {
+            document.getElementById('charCount').textContent = ta.value.length + ' 字';
+        });
+        ta.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'Enter') {
+                e.preventDefault();
+                doTranslate();
+            }
+        });
+    }
+
+    async function loadLanguages() {
+        try {
+            const res = await fetch('/languages');
+            const data = await res.json();
+            if (data.languages && Object.keys(data.languages).length) {
+                LANG = data.languages;
+            }
+        } catch (e) {
+            // 接口不可用时使用内置语言表
+        }
+        renderSelects();
+    }
+
+    function renderSelects() {
+        const srcSel = document.getElementById('sourceLang');
+        const tgtSel = document.getElementById('targetLang');
+        srcSel.innerHTML = '';
+        tgtSel.innerHTML = '';
+        for (const [code, name] of Object.entries(LANG)) {
+            const o1 = document.createElement('option');
+            o1.value = code;
+            o1.textContent = name;
+            srcSel.appendChild(o1);
+            if (code !== 'auto') {
+                const o2 = document.createElement('option');
+                o2.value = code;
+                o2.textContent = name;
+                tgtSel.appendChild(o2);
+            }
+        }
+        refresh();
+    }
+
+    function refresh() {
+        document.getElementById('sourceLang').value = sourceLang;
+        document.getElementById('targetLang').value = targetLang;
+    }
+
+    function onSourceChange() {
+        const prev = sourceLang;
+        sourceLang = document.getElementById('sourceLang').value;
+        if (sourceLang !== 'auto' && sourceLang === targetLang) {
+            targetLang = prev === 'auto' ? 'zh' : prev;
+        }
+        refresh();
+    }
+
+    function onTargetChange() {
+        const prev = targetLang;
+        targetLang = document.getElementById('targetLang').value;
+        if (sourceLang !== 'auto' && sourceLang === targetLang) {
+            sourceLang = prev;
+        }
+        refresh();
+    }
+
+    function swapLangs() {
+        if (sourceLang === 'auto') {
+            sourceLang = targetLang;
+            targetLang = (targetLang === 'zh' ? 'en' : 'zh');
+        } else {
+            const t = sourceLang;
+            sourceLang = targetLang;
+            targetLang = t;
+        }
+        refresh();
+    }
+
+    function setMode(m) {
+        mode = m;
+        document.getElementById('tabTranslate').classList.toggle('active', m === 'translate');
+        document.getElementById('tabDict').classList.toggle('active', m === 'dictionary');
+        document.getElementById('inputText').placeholder =
+            m === 'dictionary' ? '请输入要查询的单词或短语…（Ctrl + Enter 快速查询）' : '请输入要翻译的内容…（Ctrl + Enter 快速翻译）';
+        document.getElementById('translateBtn').textContent =
+            m === 'dictionary' ? '查询含义' : '立即翻译';
+        document.getElementById('resultLabel').textContent =
+            m === 'dictionary' ? '查询结果' : '翻译结果';
+        document.getElementById('result').style.display = 'none';
+    }
+
+    // ---------- 翻译 ----------
+    async function doTranslate() {
+        const text = document.getElementById('inputText').value.trim();
+        if (!text) {
+            toast(mode === 'dictionary' ? '请输入要查询的单词' : '请输入要翻译的内容');
+            return;
+        }
+        if (mode === 'translate' && sourceLang === targetLang) {
+            toast('源语言和目标语言不能相同');
+            return;
+        }
+
+        const btn = document.getElementById('translateBtn');
+        const loading = document.getElementById('loading');
+        const result = document.getElementById('result');
+
+        btn.disabled = true;
+        loading.style.display = 'block';
+        result.style.display = 'none';
+
+        try {
+            const res = await fetch('/translate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text, sourceLang, targetLang, mode })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                document.getElementById('resultContent').textContent = data.translated;
+                document.getElementById('detectedTag').style.display =
+                    (sourceLang === 'auto') ? 'inline-block' : 'none';
+                document.getElementById('resultTime').textContent = '翻译时间：' + (data.time || '');
+                currentResultText = data.translated;
+                result.style.display = 'block';
+                addHistory(data, text);
+            } else {
+                toast(data.error || '翻译失败，请检查设置');
+            }
+        } catch (error) {
+            toast('翻译失败：' + error.message);
+        } finally {
+            btn.disabled = false;
+            loading.style.display = 'none';
+        }
+    }
+
+    // ---------- 历史记录（localStorage） ----------
+    function loadHistory() {
+        try {
+            history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+        } catch (e) {
+            history = [];
+        }
+    }
+
+    function saveHistory() {
+        try {
+            localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+        } catch (e) {
+            // 存储满或隐私模式下忽略
+        }
+    }
+
+    function addHistory(data, original) {
+        history.unshift({
+            id: Date.now(),
+            original: original,
+            translated: data.translated,
+            sourceLang: sourceLang,
+            targetLang: targetLang,
+            sourceName: LANG[sourceLang] || sourceLang,
+            targetName: LANG[targetLang] || targetLang,
+            detected: sourceLang === 'auto',
+            mode: mode,
+            time: data.time || ''
+        });
+        if (history.length > 50) history = history.slice(0, 50);
+        saveHistory();
+        renderHistory();
+    }
+
+    function renderHistory() {
+        const list = document.getElementById('historyList');
+        const empty = document.getElementById('emptyHistory');
+        list.innerHTML = '';
+        empty.style.display = history.length ? 'none' : 'block';
+
+        history.forEach((item) => {
+            const li = document.createElement('li');
+            li.className = 'history-item';
+
+            const head = document.createElement('div');
+            head.className = 'hi-head';
+            const dir = document.createElement('span');
+            dir.textContent = (item.mode === 'dictionary' ? '查词 · ' : '') +
+                (item.detected ? '自动检测' : item.sourceName) + ' → ' + item.targetName;
+            const time = document.createElement('span');
+            time.textContent = item.time || '';
+            head.appendChild(dir);
+            head.appendChild(time);
+
+            const orig = document.createElement('div');
+            orig.className = 'hi-original';
+            orig.textContent = item.original;
+
+            const trans = document.createElement('div');
+            trans.className = 'hi-translated';
+            trans.textContent = item.translated;
+
+            const actions = document.createElement('div');
+            actions.className = 'hi-actions';
+            const btnRestore = document.createElement('button');
+            btnRestore.textContent = '载入';
+            btnRestore.onclick = (e) => { e.stopPropagation(); restoreHistory(item); };
+            const btnCopy = document.createElement('button');
+            btnCopy.textContent = '复制';
+            btnCopy.onclick = (e) => { e.stopPropagation(); copyText(item.translated); };
+            const btnDel = document.createElement('button');
+            btnDel.textContent = '删除';
+            btnDel.className = 'del';
+            btnDel.onclick = (e) => { e.stopPropagation(); deleteHistory(item.id); };
+            actions.appendChild(btnRestore);
+            actions.appendChild(btnCopy);
+            actions.appendChild(btnDel);
+
+            li.appendChild(head);
+            li.appendChild(orig);
+            li.appendChild(trans);
+            li.appendChild(actions);
+            li.onclick = () => restoreHistory(item);
+            list.appendChild(li);
+        });
+    }
+
+    function restoreHistory(item) {
+        document.getElementById('inputText').value = item.original;
+        document.getElementById('charCount').textContent = item.original.length + ' 字';
+        sourceLang = item.sourceLang || 'zh';
+        targetLang = item.targetLang || 'en';
+        setMode(item.mode || 'translate');
+        refresh();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function deleteHistory(id) {
+        history = history.filter((h) => h.id !== id);
+        saveHistory();
+        renderHistory();
+        toast('已删除该记录');
+    }
+
+    function clearHistory() {
+        if (!history.length) {
+            toast('暂无历史记录');
+            return;
+        }
+        if (!confirm('确定清空全部翻译历史吗？')) return;
+        history = [];
+        saveHistory();
+        renderHistory();
+        toast('已清空历史');
+    }
+
+    function toggleHistory() {
+        const list = document.getElementById('historyList');
+        const empty = document.getElementById('emptyHistory');
+        const title = document.querySelector('.section-title');
+        const hidden = list.style.display === 'none';
+        list.style.display = hidden ? '' : 'none';
+        empty.style.display = hidden && history.length === 0 ? 'block' : 'none';
+        title.style.display = hidden ? '' : 'none';
+    }
+
+    // ---------- 复制 ----------
+    async function copyText(text) {
+        if (!text) return;
+        try {
+            if (navigator.clipboard && window.isSecureContext) {
+                await navigator.clipboard.writeText(text);
+            } else {
+                fallbackCopy(text);
+            }
+            toast('已复制到剪贴板');
+        } catch (e) {
+            fallbackCopy(text);
+        }
+    }
+
+    function fallbackCopy(text) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try {
+            document.execCommand('copy');
+            toast('已复制到剪贴板');
+        } catch (e) {
+            toast('复制失败，请手动复制');
+        }
+        document.body.removeChild(ta);
+    }
+
+    // ---------- 设置 ----------
+    async function openSettings() {
+        document.getElementById('settingsModal').classList.add('open');
+        try {
+            const res = await fetch('/api/config');
+            const data = await res.json();
+            document.getElementById('cfgModel').value = data.model || '';
+            document.getElementById('cfgApiUrl').value = data.apiUrl || '';
+            document.getElementById('cfgApiKey').value = '';
+            document.getElementById('cfgApiKey').placeholder =
+                data.hasKey ? '已配置（' + (data.apiKey || '••••') + '），留空则不修改' : '请输入 API Key';
+            document.getElementById('keyHint').textContent =
+                data.hasKey ? '当前已配置 Key，留空表示不修改' : '当前未配置 Key，翻译前需先填写';
+        } catch (e) {
+            toast('读取配置失败：' + e.message);
+        }
+    }
+
+    function closeSettings() {
+        document.getElementById('settingsModal').classList.remove('open');
+    }
+
+    async function saveSettings() {
+        const apiKey = document.getElementById('cfgApiKey').value.trim();
+        const model = document.getElementById('cfgModel').value.trim();
+        const apiUrl = document.getElementById('cfgApiUrl').value.trim();
+
+        try {
+            const res = await fetch('/api/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ apiKey, model, apiUrl })
+            });
+            await res.json();
+            closeSettings();
+            toast('设置已保存');
+        } catch (e) {
+            toast('保存失败：' + e.message);
+        }
+    }
+
+    // ---------- Toast ----------
+    let toastTimer = null;
+
+    function toast(msg) {
+        const el = document.getElementById('toast');
+        el.textContent = msg;
+        el.style.display = 'block';
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => {
+            el.style.display = 'none';
+        }, 2200);
+    }
+
+    init();
+</script>
+</body>
+</html>

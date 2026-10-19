@@ -1,0 +1,58 @@
+### ==================== AI 翻译官 接口调试 ====================
+### 默认端口 8080
+
+### 翻译（新格式：sourceLang / targetLang，支持多语言）
+POST http://localhost:8080/translate
+Content-Type: application/json
+
+{
+  "text": "你好，世界",
+  "sourceLang": "zh",
+  "targetLang": "en"
+}
+
+### 翻译（自动检测源语言）
+POST http://localhost:8080/translate
+Content-Type: application/json
+
+{
+  "text": "Hello, how are you?",
+  "sourceLang": "auto",
+  "targetLang": "zh"
+}
+
+### 翻译（兼容旧版 direction 参数）
+POST http://localhost:8080/translate
+Content-Type: application/json
+
+{
+  "text": "你好，世界",
+  "direction": "zh2en"
+}
+
+### 查词（列出单词全部义项，一词多义全部列出）
+POST http://localhost:8080/translate
+Content-Type: application/json
+
+{
+  "text": "casual",
+  "sourceLang": "auto",
+  "targetLang": "zh",
+  "mode": "dictionary"
+}
+
+### 获取支持的语言列表
+GET http://localhost:8080/languages
+
+### 读取当前配置（API Key 打码）
+GET http://localhost:8080/api/config
+
+### 更新配置（apiKey 留空则保持不变）
+POST http://localhost:8080/api/config
+Content-Type: application/json
+
+{
+  "apiKey": "",
+  "model": "deepseek-chat",
+  "apiUrl": "https://api.deepseek.com/v1/chat/completions"
+}
